@@ -17,8 +17,9 @@
  */
 package org.owasp.dependencycheck.analyzer;
 
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
 import com.github.packageurl.PackageURLBuilder;
-import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
 
@@ -34,16 +35,27 @@ import org.owasp.dependencycheck.utils.FileFilterBuilder;
 import org.owasp.dependencycheck.utils.Settings;
 
 import com.moandjiezana.toml.Toml;
+import org.apache.commons.lang3.StringUtils;
+import org.owasp.dependencycheck.dependency.naming.GenericIdentifier;
+import org.owasp.dependencycheck.dependency.naming.Identifier;
+import org.owasp.dependencycheck.dependency.naming.PurlIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Go lang dependency analyzer.
  *
  * @author Nima Yahyazadeh
+ * @author Jeremy Long
  */
 @ThreadSafe
 @Experimental
 public class GolangDepAnalyzer extends AbstractFileTypeAnalyzer {
 
+    /**
+     * The logger.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(GolangDepAnalyzer.class);
     /**
      * A descriptor for the type of dependencies processed or added by this
      * analyzer.
@@ -125,70 +137,118 @@ public class GolangDepAnalyzer extends AbstractFileTypeAnalyzer {
      */
     @Override
     protected void analyzeDependency(Dependency dependency, Engine engine) throws AnalysisException {
-        dependency.setEcosystem(DEPENDENCY_ECOSYSTEM);
+        //do not report on the build file itself
+        engine.removeDependency(dependency);
 
-        if (dependency.getFileName() == null || !GOPKG_LOCK_FILTER.accept(dependency.getActualFile())) {
-            System.out.println("Didn't find any");
-        }
-
-        System.out.println(dependency);
         final Toml result = new Toml().read(dependency.getActualFile());
         final List<Toml> projectsLocks = result.getTables("projects");
-        PackageURLBuilder packageBuilder = PackageURLBuilder.aPackageURL().withType("golang");
-        for (Toml lock : projectsLocks) {
-            final String name = lock.getString("name");
-            final Dependency dep = new Dependency(dependency.getActualFile(), true);
-            dep.setName(name);
-            dep.setDisplayFileName(name);
-            String pkgName = null;
-            String depName = null;
 
-            if (name != null && !name.isEmpty()) {
-                final int slashPos = name.indexOf("/");
-                if (slashPos>0) {
-                    pkgName = name.substring(0, name.indexOf("/"));
-                    depName = name.substring(pkgName.length() + 1);
+        for (Toml project : projectsLocks) {
+            final String name = project.getString("name");
+            final String version = project.getString("version");
+            final String revision = project.getString("revision");
 
-                    packageBuilder.withNamespace(pkgName);
-                    packageBuilder.withName(depName);
-                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", pkgName, Confidence.LOW);
-                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", pkgName, Confidence.LOW);
-
-                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
-                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
-                } else {
-                    packageBuilder.withName(name);
-                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
-                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
-                }
-            }
-
-            final String version = lock.getString("version");
-            if (version != null && version.isEmpty()) {
-                packageBuilder.withVersion(version);
-                dep.setVersion(version);
-                dep.addEvidence(EvidenceType.VERSION, GOPKG_LOCK, "version", version, Confidence.HIGHEST);
-            }
-
-            final String revision = lock.getString("revision");
-            if (revision != null && revision.isEmpty()) {
-                if (version==null) {
-                    dep.setVersion(revision);
-                }
-                //Revision (which appears to be a commit hash) won't be of any value in the analysis.
-                //dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "revision", revision, Confidence.HIGHEST);
-            }
+            Dependency dep = createDependency(dependency, name, version, revision, null);
             engine.addDependency(dep);
-            
-            final List<String> packages = lock.getList("packages");
+            final List<String> packages = project.getList("packages");
             for (String pkg : packages) {
-                System.out.println(pkg);
-                if (pkg != null && !pkg.isEmpty() && !pkg.equals(".")) {
-                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "package", revision, Confidence.HIGHEST);
+                if (StringUtils.isNotBlank(pkg) && !".".equals(pkg)) {
+                    dep = createDependency(dependency, name, version, revision, pkg);
+                    engine.addDependency(dep);
                 }
             }
 
-            
         }
+    }
+
+    /**
+     * Builds a dependency object based on the given data.
+     *
+     * @param parentDependency a reference to the parent dependency
+     * @param name the name of the dependency
+     * @param version the version of the dependency
+     * @param revision the revision of the dependency
+     * @param subPath the sub-path of the dependency
+     * @return a new dependency object
+     */
+    private Dependency createDependency(Dependency parentDependency, String name, String version, String revision, String subPath) {
+        final Dependency dep = new Dependency(parentDependency.getActualFile(), true);
+        if (StringUtils.isNotBlank(subPath)) {
+            dep.setDisplayFileName(name + "/" + subPath);
+            dep.setName(name + "/" + subPath);
+        } else {
+            dep.setDisplayFileName(name);
+            dep.setName(name);
+        }
+        PackageURLBuilder packageBuilder = PackageURLBuilder.aPackageURL().withType("golang");
+
+        String baseNamespace = null;
+        String depNamespace = null;
+        String depName = null;
+        if (StringUtils.isNotBlank(name)) {
+            final int slashPos = name.indexOf("/");
+            if (slashPos > 0) {
+                baseNamespace = name.substring(0, slashPos);
+                final int lastSlash = name.lastIndexOf("/");
+                depName = name.substring(lastSlash + 1);
+                if (lastSlash != slashPos) {
+                    depNamespace = name.substring(slashPos + 1, lastSlash);
+                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", depNamespace, Confidence.HIGH);
+                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", depNamespace, Confidence.HIGH);
+                    packageBuilder.withNamespace(baseNamespace + "/" + depNamespace);
+                } else {
+                    packageBuilder.withNamespace(baseNamespace);
+                }
+                packageBuilder.withName(depName);
+                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", baseNamespace, Confidence.LOW);
+                dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", baseNamespace, Confidence.LOW);
+
+                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
+                dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
+            } else {
+                packageBuilder.withName(name);
+                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
+                dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
+            }
+        }
+        if (StringUtils.isNotBlank(version)) {
+            packageBuilder.withVersion(version);
+            dep.setVersion(version);
+            dep.addEvidence(EvidenceType.VERSION, GOPKG_LOCK, "version", version, Confidence.HIGHEST);
+        }
+        if (StringUtils.isNotBlank(revision)) {
+            if (version == null) {
+                //this is used to help determine the actual version in the NVD - a commit hash doesn't work
+                // instead we need to make it an asterik for the CPE...
+                //dep.setVersion(revision);
+                packageBuilder.withVersion(version);
+            }
+            //Revision (which appears to be a commit hash) won't be of any value in the analysis.
+            //dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "revision", revision, Confidence.HIGHEST);
+        }
+        if (StringUtils.isNotBlank(subPath)) {
+            packageBuilder.withSubpath(subPath);
+            dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "package", subPath, Confidence.HIGH);
+            dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "package", subPath, Confidence.MEDIUM);
+        }
+
+        Identifier id;
+        PackageURL purl = null;
+        try {
+            purl = packageBuilder.build();
+            id = new PurlIdentifier(packageBuilder.build(), Confidence.HIGHEST);
+        } catch (MalformedPackageURLException ex) {
+            LOGGER.warn("Unable to create package-url identifier for `{}` in `{}` - reason: {}", name, parentDependency.getFilePath(), ex.getMessage());
+            StringBuilder value = new StringBuilder(name);
+            if (StringUtils.isNotBlank(subPath)) {
+                value.append("/").append(subPath);
+            }
+            if (StringUtils.isNotBlank(version)) {
+                value.append("@").append(version);
+            }
+            id = new GenericIdentifier(value.toString(), Confidence.HIGH);
+        }
+        dep.addSoftwareIdentifier(id);
+        return dep;
     }
 }
