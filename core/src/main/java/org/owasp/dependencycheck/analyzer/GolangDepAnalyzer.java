@@ -17,6 +17,7 @@
  */
 package org.owasp.dependencycheck.analyzer;
 
+import com.github.packageurl.PackageURLBuilder;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
@@ -133,28 +134,52 @@ public class GolangDepAnalyzer extends AbstractFileTypeAnalyzer {
         System.out.println(dependency);
         final Toml result = new Toml().read(dependency.getActualFile());
         final List<Toml> projectsLocks = result.getTables("projects");
+        PackageURLBuilder packageBuilder = PackageURLBuilder.aPackageURL().withType("golang");
         for (Toml lock : projectsLocks) {
             final String name = lock.getString("name");
-            final Dependency dep = new Dependency(new File(name), true);
+            final Dependency dep = new Dependency(dependency.getActualFile(), true);
             dep.setName(name);
+            dep.setDisplayFileName(name);
+            String pkgName = null;
+            String depName = null;
 
-            System.out.println(name);
             if (name != null && !name.isEmpty()) {
-                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "name", name, Confidence.HIGHEST);
+                final int slashPos = name.indexOf("/");
+                if (slashPos>0) {
+                    pkgName = name.substring(0, name.indexOf("/"));
+                    depName = name.substring(pkgName.length() + 1);
+
+                    packageBuilder.withNamespace(pkgName);
+                    packageBuilder.withName(depName);
+                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", pkgName, Confidence.LOW);
+                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", pkgName, Confidence.LOW);
+
+                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
+                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "name", depName, Confidence.HIGHEST);
+                } else {
+                    packageBuilder.withName(name);
+                    dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
+                    dep.addEvidence(EvidenceType.VENDOR, GOPKG_LOCK, "namespace", name, Confidence.HIGHEST);
+                }
             }
 
             final String version = lock.getString("version");
-            System.out.println(version);
             if (version != null && version.isEmpty()) {
-                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "version", version, Confidence.HIGHEST);
+                packageBuilder.withVersion(version);
+                dep.setVersion(version);
+                dep.addEvidence(EvidenceType.VERSION, GOPKG_LOCK, "version", version, Confidence.HIGHEST);
             }
 
             final String revision = lock.getString("revision");
-            System.out.println(revision);
             if (revision != null && revision.isEmpty()) {
-                dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "revision", revision, Confidence.HIGHEST);
+                if (version==null) {
+                    dep.setVersion(revision);
+                }
+                //Revision (which appears to be a commit hash) won't be of any value in the analysis.
+                //dep.addEvidence(EvidenceType.PRODUCT, GOPKG_LOCK, "revision", revision, Confidence.HIGHEST);
             }
-
+            engine.addDependency(dep);
+            
             final List<String> packages = lock.getList("packages");
             for (String pkg : packages) {
                 System.out.println(pkg);
@@ -163,7 +188,7 @@ public class GolangDepAnalyzer extends AbstractFileTypeAnalyzer {
                 }
             }
 
-            engine.addDependency(dep);
+            
         }
     }
 }
