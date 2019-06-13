@@ -439,6 +439,8 @@ public final class CliParser {
                 .desc("Disable the Python Package Analyzer.").build();
         final Option disableComposerAnalyzer = Option.builder().longOpt(ARGUMENT.DISABLE_COMPOSER)
                 .desc("Disable the PHP Composer Analyzer.").build();
+        final Option disableGolangModAnalyzer = Option.builder().longOpt(ARGUMENT.DISABLE_GOLANG_MOD)
+                .desc("Disable the Golang Mod Analyzer.").build();
         final Option disableAutoconfAnalyzer = Option.builder()
                 .longOpt(ARGUMENT.DISABLE_AUTOCONF).desc("Disable the Autoconf Analyzer.").build();
         final Option disableOpenSSLAnalyzer = Option.builder().longOpt(ARGUMENT.DISABLE_OPENSSL)
@@ -489,6 +491,7 @@ public final class CliParser {
                         .desc("Disable the Ruby Bundler-Audit Analyzer.").build())
                 .addOption(disableAutoconfAnalyzer)
                 .addOption(disableComposerAnalyzer)
+                .addOption(disableGolangModAnalyzer)
                 .addOption(disableOpenSSLAnalyzer)
                 .addOption(disableNuspecAnalyzer)
                 .addOption(disableNugetconfAnalyzer)
@@ -739,6 +742,16 @@ public final class CliParser {
      */
     public boolean isAutoconfDisabled() {
         return hasDisableOption(ARGUMENT.DISABLE_AUTOCONF, Settings.KEYS.ANALYZER_AUTOCONF_ENABLED);
+    }
+
+    /**
+     * Returns true if the disableGolangMod command line argument was specified.
+     *
+     * @return true if the disableGolangMod command line argument was specified;
+     * otherwise false
+     */
+    public boolean isGolangModDisabled() {
+        return hasDisableOption(ARGUMENT.DISABLE_GOLANG_MOD, Settings.KEYS.ANALYZER_GOLANG_MOD_ENABLED);
     }
 
     /**
@@ -1591,6 +1604,10 @@ public final class CliParser {
          * Disables the Python Package Analyzer.
          */
         public static final String DISABLE_COMPOSER = "disableComposer";
+        /**
+         * Disables the Golang Mod Analyzer.
+         */
+        public static final String DISABLE_GOLANG_MOD = "disableGolangMod";
         /**
          * Disables the Ruby Gemspec Analyzer.
          */
