@@ -319,6 +319,11 @@ public final class Settings {
          */
         public static final String ANALYZER_GOLANG_DEP_ENABLED = "analyzer.golang.dep.enabled";
         /**
+         * The properties key for whether the Golang Mod analyzer is
+         * enabled.
+         */
+        public static final String ANALYZER_GOLANG_MOD_ENABLED = "analyzer.golang.mod.enabled";
+        /**
          * The properties key for whether the Ruby Gemspec Analyzer is enabled.
          */
         public static final String ANALYZER_RUBY_GEMSPEC_ENABLED = "analyzer.ruby.gemspec.enabled";
@@ -454,6 +459,10 @@ public final class Settings {
          * The path to bundle-audit, if available.
          */
         public static final String ANALYZER_BUNDLE_AUDIT_PATH = "analyzer.bundle.audit.path";
+        /**
+         * The path to go, if available.
+         */
+        public static final String ANALYZER_GOLANG_PATH = "analyzer.golang.path";
         /**
          * The additional configured zip file extensions, if available.
          */
