@@ -62,9 +62,9 @@ public class GolangModAnalyzerTest extends BaseTest {
         analyzer.prepare(engine);
         final Dependency result = new Dependency(BaseTest.getResourceAsFile(this, "golang/go.mod"));
         analyzer.analyze(result, engine);
-//        assertEquals(2, engine.getDependencies().length);
-//        for (Dependency d : engine.getDependencies()) {
-//            System.out.println(d.getSoftwareIdentifiers().toArray()[0]);
-//        }
+        for (Dependency d : engine.getDependencies()) {
+            System.out.println(d.getSoftwareIdentifiers().toArray()[0]);
+        }
+        assertEquals(3, engine.getDependencies().length);
     }
 }

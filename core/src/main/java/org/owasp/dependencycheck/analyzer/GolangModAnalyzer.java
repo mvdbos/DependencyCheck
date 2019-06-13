@@ -70,7 +70,7 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
      * According to here, go.mod should be used for reproducible builds:
      * https://github.com/golang/go/wiki/Modules#is-gosum-a-lock-file-why-does-gosum-include-information-for-module-versions-i-am-no-longer-using
      */
-    private static final String GO_MOD = "go.mod";
+    public static final String GO_MOD = "go.mod";
 
     /**
      * The file filter for Gopkg.lock
@@ -193,7 +193,6 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
         final int possiblyGoTooOldExitValue = 2;
         final int goExecutableNotFoundExitValue = 127;
 
-        System.out.println("Exitval: " + exitValue);
         switch (exitValue) {
             case expectedNoModuleFoundExitValue:
                 setEnabled(true);
@@ -260,7 +259,9 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
             }
             final GoModJsonParser parser = new GoModJsonParser(process.getInputStream());
             parser.process();
-            parser.getDependencies().forEach(System.out::println);
+            parser.getDependencies().forEach(goDep ->
+                    engine.addDependency(goDep.toDependency(dependency))
+            );
         } catch (IOException ioe) {
             LOGGER.warn("go mod failure", ioe);
         }

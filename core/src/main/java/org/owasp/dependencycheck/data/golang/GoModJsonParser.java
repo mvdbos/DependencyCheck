@@ -18,7 +18,6 @@
 package org.owasp.dependencycheck.data.golang;
 
 import org.owasp.dependencycheck.analyzer.exception.AnalysisException;
-import org.owasp.dependencycheck.data.composer.ComposerDependency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,8 +87,8 @@ public class GoModJsonParser {
             throw new AnalysisException("Error reading stream", jsone);
         } catch (IllegalStateException ise) {
             throw new AnalysisException("Illegal state in go mod stream", ise);
-//        } catch (ClassCastException cce) {
-//            throw new AnalysisException("Not exactly composer lock", cce);
+        } catch (ClassCastException cce) {
+            throw new AnalysisException("JSON not exactly matching output of `go mod edit -json`", cce);
         }
     }
 
