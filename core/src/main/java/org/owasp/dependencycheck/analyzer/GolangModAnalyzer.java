@@ -209,6 +209,7 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
                 } catch (IOException ex) {
                     throw new InitializationException("Unable to read go output.", ex);
                 }
+                // fall through
             default:
                 final String msg = String.format("Unexpected exit code from go process. Disabling %s: %s", ANALYZER_NAME, exitValue);
                 throw new InitializationException(msg);
