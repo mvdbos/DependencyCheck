@@ -1,7 +1,23 @@
+/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2019 Matthijs van den Bos. All Rights Reserved.
+ */
 package org.owasp.dependencycheck.data.golang;
 
 import com.github.packageurl.MalformedPackageURLException;
-import com.github.packageurl.PackageURL;
 import com.github.packageurl.PackageURLBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.dependencycheck.dependency.Confidence;
@@ -17,19 +33,19 @@ import org.slf4j.LoggerFactory;
 import static org.owasp.dependencycheck.analyzer.GolangModAnalyzer.DEPENDENCY_ECOSYSTEM;
 import static org.owasp.dependencycheck.analyzer.GolangModAnalyzer.GO_MOD;
 
+/**
+ * Represents a Go module dependency
+ *
+ * @author Matthijs van den Bos
+ */
 public class GoModDependency {
-    /**
-     * The logger.
-     */
     private static final Logger LOGGER = LoggerFactory.getLogger(GoModDependency.class);
-
     private String modulePath;
     private String version;
     private String revision = null;
-
     private PackageURLBuilder packageURLBuilder;
 
-    public GoModDependency(String modulePath, String version) {
+    GoModDependency(String modulePath, String version) {
         this.modulePath = modulePath;
         this.version = version;
 
@@ -54,14 +70,13 @@ public class GoModDependency {
      * @param subPath          the sub-path of the dependency
      * @return a new dependency object
      */
-    @SuppressWarnings("Duplicates")
     private Dependency createDependency(Dependency parentDependency, String name, String version, String revision, String subPath) {
         final Dependency dep = new Dependency(parentDependency.getActualFile(), true);
 
         String vendor = null;
         String moduleName = null;
 
-        // find the bare name of the module, without vendor info
+        // separate the product from the vendor
         final int lastSlash = name.lastIndexOf("/");
         if (lastSlash > 0) {
             vendor = name.substring(0, lastSlash);
@@ -69,8 +84,6 @@ public class GoModDependency {
         } else {
             moduleName = name;
         }
-
-
 
         final String filePath = String.format("%s:%s/%s/%s", parentDependency.getFilePath(), vendor, moduleName, version);
 
@@ -94,7 +107,6 @@ public class GoModDependency {
         dep.addEvidence(EvidenceType.VERSION, GO_MOD, "version", version, Confidence.HIGHEST);
 
         Identifier id;
-        PackageURL purl = null;
         try {
             id = new PurlIdentifier(packageURLBuilder.build(), Confidence.HIGHEST);
         } catch (MalformedPackageURLException ex) {

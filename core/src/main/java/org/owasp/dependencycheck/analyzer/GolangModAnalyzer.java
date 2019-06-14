@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (c) 2019 Nima Yahyazadeh. All Rights Reserved.
+ * Copyright (c) 2019 Matthijs van den Bos. All Rights Reserved.
  */
 package org.owasp.dependencycheck.analyzer;
 
 import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.analyzer.exception.AnalysisException;
-import org.owasp.dependencycheck.data.golang.GoModDependency;
 import org.owasp.dependencycheck.data.golang.GoModJsonParser;
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.exception.InitializationException;
@@ -28,18 +27,16 @@ import org.owasp.dependencycheck.utils.Settings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Go lang dependency analyzer.
+ * Go mod dependency analyzer.
  *
  * @author Matthijs van den Bos
  */
-@ThreadSafe
 @Experimental
 public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
     /**
@@ -228,9 +225,6 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
      */
     @Override
     protected void analyzeDependency(Dependency dependency, Engine engine) throws AnalysisException {
-        //do not report on the build file itself
-//        engine.removeDependency(dependency);
-
         final File parentFile = dependency.getActualFile().getParentFile();
         final Process process = launchGoMod(parentFile);
 
@@ -264,6 +258,5 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
         } catch (IOException ioe) {
             LOGGER.warn("go mod failure", ioe);
         }
-
     }
 }

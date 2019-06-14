@@ -33,6 +33,11 @@ import java.io.File;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
+/**
+ * Unit tests for GolangModAnalyzer.
+ *
+ * @author Matthijs van den Bos
+ */
 public class GolangModAnalyzerTest extends BaseTest {
 
     private GolangModAnalyzer analyzer;
