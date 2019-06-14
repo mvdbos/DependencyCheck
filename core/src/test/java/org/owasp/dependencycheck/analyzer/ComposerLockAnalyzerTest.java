@@ -113,6 +113,7 @@ public class ComposerLockAnalyzerTest extends BaseDBTestCase {
                 }
             }
             assertTrue("Expeced to find classpreloader", found);
+
         }
     }
 }

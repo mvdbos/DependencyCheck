@@ -31,8 +31,7 @@ import org.owasp.dependencycheck.exception.InitializationException;
 import java.io.File;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class GolangModAnalyzerTest extends BaseTest {
 
@@ -81,20 +80,30 @@ public class GolangModAnalyzerTest extends BaseTest {
         analyzer.prepare(engine);
         final Dependency result = new Dependency(BaseTest.getResourceAsFile(this, "golang/go.mod"));
         analyzer.analyze(result, engine);
-        for (Dependency d : engine.getDependencies()) {
-//            System.out.println(d.getSoftwareIdentifiers().toArray()[0]);
-//            System.out.println(d.getVersion());
-//            System.out.println(d.getEcosystem());
-            System.out.println(d.getEvidence(EvidenceType.VENDOR));
-//            System.out.println(d.getEvidence(EvidenceType.PRODUCT));
-            System.out.println();
-            System.out.println(d.getEvidence(EvidenceType.VERSION));
 
-            System.out.println();
-            System.out.println();
-            System.out.println();
-        }
         assertEquals(5, engine.getDependencies().length);
-        engine.analyzeDependencies();
+
+        boolean found = false;
+        for (Dependency d : engine.getDependencies()) {
+            if ("gitea".equals(d.getName())) {
+                found = true;
+                assertEquals("1.5.0", d.getVersion());
+                assertEquals(d.getDisplayFileName(), "github.com/go-gitea/gitea:1.5.0");
+                assertEquals(GolangModAnalyzer.DEPENDENCY_ECOSYSTEM, d.getEcosystem());
+                assertTrue(d.getEvidence(EvidenceType.VENDOR).toString().toLowerCase().contains("github.com/go-gitea"));
+                assertTrue(d.getEvidence(EvidenceType.PRODUCT).toString().toLowerCase().contains("gitea"));
+                assertTrue(d.getEvidence(EvidenceType.VERSION).toString().toLowerCase().contains("1.5.0"));
+            }
+        }
+        assertTrue("Expected to find gitea/gitea", found);
+    }
+
+    public void testAnalysis() throws InitializationException, AnalysisException {
+        engine.openDatabase();
+        analyzer.prepare(engine);
+        final Dependency result = new Dependency(BaseTest.getResourceAsFile(this, "golang/go.mod"));
+        analyzer.analyze(result, engine);
+
+
     }
 }
