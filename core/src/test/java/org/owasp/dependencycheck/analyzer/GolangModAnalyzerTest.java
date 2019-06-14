@@ -17,12 +17,15 @@
  */
 package org.owasp.dependencycheck.analyzer;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.owasp.dependencycheck.BaseTest;
 import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.analyzer.exception.AnalysisException;
 import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.EvidenceType;
+import org.owasp.dependencycheck.exception.ExceptionCollection;
 import org.owasp.dependencycheck.exception.InitializationException;
 
 import java.io.File;
@@ -46,6 +49,22 @@ public class GolangModAnalyzerTest extends BaseTest {
         analyzer.setFilesMatched(true);
     }
 
+    /**
+     * Cleanup the analyzer's temp files, etc.
+     *
+     * @throws Exception thrown if there is a problem
+     */
+    @After
+    @Override
+    public void tearDown() throws Exception {
+        if (analyzer != null) {
+            analyzer.close();
+            analyzer = null;
+        }
+        super.tearDown();
+    }
+
+
     @Test
     public void testName() {
         assertEquals("Analyzer name wrong.", "Golang Mod Analyzer",
@@ -58,13 +77,24 @@ public class GolangModAnalyzerTest extends BaseTest {
     }
 
     @Test
-    public void testGoMod() throws AnalysisException, InitializationException {
+    public void testGoMod() throws AnalysisException, InitializationException, ExceptionCollection {
         analyzer.prepare(engine);
         final Dependency result = new Dependency(BaseTest.getResourceAsFile(this, "golang/go.mod"));
         analyzer.analyze(result, engine);
         for (Dependency d : engine.getDependencies()) {
-            System.out.println(d.getSoftwareIdentifiers().toArray()[0]);
+//            System.out.println(d.getSoftwareIdentifiers().toArray()[0]);
+//            System.out.println(d.getVersion());
+//            System.out.println(d.getEcosystem());
+            System.out.println(d.getEvidence(EvidenceType.VENDOR));
+//            System.out.println(d.getEvidence(EvidenceType.PRODUCT));
+            System.out.println();
+            System.out.println(d.getEvidence(EvidenceType.VERSION));
+
+            System.out.println();
+            System.out.println();
+            System.out.println();
         }
-        assertEquals(3, engine.getDependencies().length);
+        assertEquals(5, engine.getDependencies().length);
+        engine.analyzeDependencies();
     }
 }

@@ -1,6 +1,8 @@
 module my/thing
 require other/thing v1.0.2
         require github.com/ethereum/go-ethereum v1.8.17
+        require golang.org/x/crypto/salsa20 v0.0.1
+require  github.com/go-gitea/gitea v1.5.0
 
  require new/thing/v2 v2.3.4
 

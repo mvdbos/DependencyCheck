@@ -42,16 +42,11 @@ import java.util.List;
 @ThreadSafe
 @Experimental
 public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
-
-    /**
-     * The List of ComposerDependencies found
-     */
-    private final List<GoModDependency> goModDependencies = new ArrayList<>();
-
     /**
      * The logger.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(GolangModAnalyzer.class);
+
     /**
      * A descriptor for the type of dependencies processed or added by this
      * analyzer.
@@ -251,11 +246,15 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
             throw new AnalysisException(msg);
         }
         try {
+            StringBuilder error = new StringBuilder();
             try (BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 while (errReader.ready()) {
-                    final String error = errReader.readLine();
-                    LOGGER.warn(error);
+                    error.append(errReader.readLine());
                 }
+            }
+            LOGGER.warn(error.toString());
+            if (!error.toString().equals("")) {
+                throw new AnalysisException(error.toString());
             }
             final GoModJsonParser parser = new GoModJsonParser(process.getInputStream());
             parser.process();

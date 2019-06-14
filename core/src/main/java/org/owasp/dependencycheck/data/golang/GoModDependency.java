@@ -13,6 +13,7 @@ import org.owasp.dependencycheck.dependency.naming.PurlIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.owasp.dependencycheck.analyzer.GolangModAnalyzer.DEPENDENCY_ECOSYSTEM;
 import static org.owasp.dependencycheck.analyzer.GolangModAnalyzer.GO_MOD;
 
 public class GoModDependency {
@@ -62,6 +63,8 @@ public class GoModDependency {
      */
     private Dependency createDependency(Dependency parentDependency, String name, String version, String revision, String subPath) {
         final Dependency dep = new Dependency(parentDependency.getActualFile(), true);
+        dep.setEcosystem(DEPENDENCY_ECOSYSTEM);
+
         if (StringUtils.isNotBlank(subPath)) {
             dep.setDisplayFileName(name + "/" + subPath);
             dep.setName(name + "/" + subPath);
