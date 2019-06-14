@@ -66,11 +66,6 @@ public class GoModDependency {
         if (lastSlash > 0) {
             vendor = name.substring(0, lastSlash);
             moduleName = name.substring(lastSlash + 1);
-
-//            final int vendorLastSlash = vendor.lastIndexOf("/");
-//            if (vendorLastSlash > 0) {
-//                vendor = vendor.substring(vendorLastSlash + 1);
-//            }
         } else {
             moduleName = name;
         }
@@ -88,11 +83,11 @@ public class GoModDependency {
         dep.setDisplayFileName(name + ":" + version);
         dep.setName(moduleName);
         dep.setVersion(version);
-//        dep.setPackagePath(String.format("%s:%s", name, version));
-//        dep.setFilePath(filePath);
-//        dep.setSha1sum(Checksum.getSHA1Checksum(filePath));
-//        dep.setSha256sum(Checksum.getSHA256Checksum(filePath));
-//        dep.setMd5sum(Checksum.getMD5Checksum(filePath));
+        dep.setPackagePath(String.format("%s:%s", name, version));
+        dep.setFilePath(filePath);
+        dep.setSha1sum(Checksum.getSHA1Checksum(filePath));
+        dep.setSha256sum(Checksum.getSHA256Checksum(filePath));
+        dep.setMd5sum(Checksum.getMD5Checksum(filePath));
 
         dep.addEvidence(EvidenceType.VENDOR, GO_MOD, "namespace", vendor, Confidence.HIGHEST);
         dep.addEvidence(EvidenceType.PRODUCT, GO_MOD, "name", moduleName, Confidence.HIGHEST);
@@ -116,7 +111,6 @@ public class GoModDependency {
         dep.addSoftwareIdentifier(id);
         return dep;
     }
-
 
     @Override
     public String toString() {
