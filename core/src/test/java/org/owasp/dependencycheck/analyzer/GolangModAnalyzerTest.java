@@ -27,8 +27,11 @@ import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.dependency.EvidenceType;
 import org.owasp.dependencycheck.exception.ExceptionCollection;
 import org.owasp.dependencycheck.exception.InitializationException;
+import org.owasp.dependencycheck.exception.ReportException;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -90,7 +93,7 @@ public class GolangModAnalyzerTest extends BaseTest {
                 assertEquals("1.5.0", d.getVersion());
                 assertEquals(d.getDisplayFileName(), "github.com/go-gitea/gitea:1.5.0");
                 assertEquals(GolangModAnalyzer.DEPENDENCY_ECOSYSTEM, d.getEcosystem());
-                assertTrue(d.getEvidence(EvidenceType.VENDOR).toString().toLowerCase().contains("github.com/go-gitea"));
+                assertTrue(d.getEvidence(EvidenceType.VENDOR).toString().toLowerCase().contains("go-gitea"));
                 assertTrue(d.getEvidence(EvidenceType.PRODUCT).toString().toLowerCase().contains("gitea"));
                 assertTrue(d.getEvidence(EvidenceType.VERSION).toString().toLowerCase().contains("1.5.0"));
             }
@@ -98,11 +101,39 @@ public class GolangModAnalyzerTest extends BaseTest {
         assertTrue("Expected to find gitea/gitea", found);
     }
 
+    @Test
     public void testAnalysis() throws InitializationException, AnalysisException {
         engine.openDatabase();
         analyzer.prepare(engine);
         final Dependency result = new Dependency(BaseTest.getResourceAsFile(this, "golang/go.mod"));
         analyzer.analyze(result, engine);
+        try {
+            engine.analyzeDependencies();
+        } catch (ExceptionCollection ec) {
+            System.out.println(ec);
+        }
+
+        try {
+            engine.writeReports("My App", new File("/Users/EU88FH/Downloads"), "HTML");
+        } catch (ReportException e) {
+            e.printStackTrace();
+        }
+
+//        Map<String, Integer> ecoSystem = new HashMap<>();
+//        engine.getDatabase().getVendorProductList().forEach(pair -> {
+//            engine.getDatabase().getCPEs(pair.getLeft(), pair.getRight()).forEach(cpe -> {
+//                final String eco = cpe.getEcosystem();
+//                if (ecoSystem.containsKey(eco)) {
+//                    final Integer old = ecoSystem.get(eco);
+//                    ecoSystem.put(eco, old + 1);
+//                } else {
+//                    ecoSystem.put(eco, 1);
+//                }
+//            });
+//        });
+//        ecoSystem.forEach((s, integer) -> {
+//            System.out.println(s + ":" + integer);
+//        });
 
 
     }

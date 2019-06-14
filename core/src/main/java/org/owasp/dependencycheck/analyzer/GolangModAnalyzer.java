@@ -229,7 +229,7 @@ public class GolangModAnalyzer extends AbstractFileTypeAnalyzer {
     @Override
     protected void analyzeDependency(Dependency dependency, Engine engine) throws AnalysisException {
         //do not report on the build file itself
-        engine.removeDependency(dependency);
+//        engine.removeDependency(dependency);
 
         final File parentFile = dependency.getActualFile().getParentFile();
         final Process process = launchGoMod(parentFile);
