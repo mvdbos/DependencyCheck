@@ -49,15 +49,11 @@ public class GoModDependency {
         this.modulePath = modulePath;
         this.version = version;
 
-        int index = this.version.lastIndexOf("-");
-        if (index > 0) {
-            revision = this.version.substring(index + 1);
-        }
         packageURLBuilder = PackageURLBuilder.aPackageURL().withType("golang");
     }
 
     public Dependency toDependency(Dependency parentDependency) {
-        return createDependency(parentDependency, modulePath, version, revision, null);
+        return createDependency(parentDependency, modulePath, version);
     }
 
     /**
@@ -66,11 +62,9 @@ public class GoModDependency {
      * @param parentDependency a reference to the parent dependency
      * @param name             the name of the dependency
      * @param version          the version of the dependency
-     * @param revision         the revision of the dependency
-     * @param subPath          the sub-path of the dependency
      * @return a new dependency object
      */
-    private Dependency createDependency(Dependency parentDependency, String name, String version, String revision, String subPath) {
+    private Dependency createDependency(Dependency parentDependency, String name, String version) {
         final Dependency dep = new Dependency(parentDependency.getActualFile(), true);
 
         String vendor = null;
@@ -90,7 +84,6 @@ public class GoModDependency {
         packageURLBuilder.withName(moduleName);
         packageURLBuilder.withNamespace(vendor);
         packageURLBuilder.withVersion(version);
-        packageURLBuilder.withSubpath(subPath);
 
         dep.setEcosystem(DEPENDENCY_ECOSYSTEM);
         dep.setDisplayFileName(name + ":" + version);
@@ -112,9 +105,6 @@ public class GoModDependency {
         } catch (MalformedPackageURLException ex) {
             LOGGER.warn("Unable to create package-url identifier for `{}` in `{}` - reason: {}", name, parentDependency.getFilePath(), ex.getMessage());
             StringBuilder value = new StringBuilder(name);
-            if (StringUtils.isNotBlank(subPath)) {
-                value.append("/").append(subPath);
-            }
             if (StringUtils.isNotBlank(version)) {
                 value.append("@").append(version);
             }

@@ -25,9 +25,7 @@ import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.analyzer.exception.AnalysisException;
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.dependency.EvidenceType;
-import org.owasp.dependencycheck.exception.ExceptionCollection;
 import org.owasp.dependencycheck.exception.InitializationException;
-import org.owasp.dependencycheck.exception.ReportException;
 
 import java.io.File;
 
